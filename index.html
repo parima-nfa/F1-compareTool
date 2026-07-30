@@ -823,8 +823,8 @@
           experience: sc.experience || '',
           compare_frequency: sc.compareFreq || '',
           compare_points: (sc.comparePoints||[]).join(', '),
-          groups_summary: formatGroupsSummary(session),
-          session_json: JSON.stringify(session)
+          groups_summary: formatGroupsSummary(session)
+        //  session_json: JSON.stringify(session)
         };
         if(CC_EMAIL) payload._cc = CC_EMAIL;
         const res = await fetch(FORMSPREE_ENDPOINT, {
