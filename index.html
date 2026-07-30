@@ -835,7 +835,7 @@
           groups_summary: formatGroupsSummary(session),
           custom_cards_added: customCardsAdded(session).join(', ') || '(none)'
         };
-        };
+        
         if(CC_EMAIL) payload._cc = CC_EMAIL;
         const res = await fetch(FORMSPREE_ENDPOINT, {
           method:'POST',
