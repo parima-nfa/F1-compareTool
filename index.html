@@ -781,13 +781,20 @@
     URL.revokeObjectURL(url);
   }
 
+  function formatCardLabel(c){ return c.label + (c.custom ? ' [advisor-added]' : ''); }
+
+  function customCardsAdded(session){
+    const all = session.groups.flatMap(g=>g.cards).concat(session.unsortedCards||[]);
+    return all.filter(c=>c.custom).map(c=>c.label);
+  }
+
   function formatGroupsSummary(session){
     let lines = session.groups.map(g=>{
-      const cardList = g.cards.map(c=>c.label).join(', ') || '(empty)';
+      const cardList = g.cards.map(formatCardLabel).join(', ') || '(empty)';
       return (g.priority ? '★ ' : '') + (g.name || '(unnamed group)') + ': ' + cardList + (g.notes ? ' — Note: ' + g.notes : '');
     });
     if(session.unsortedCards && session.unsortedCards.length){
-      lines.push('Left unsorted: ' + session.unsortedCards.map(c=>c.label).join(', '));
+     lines.push('Left unsorted: ' + session.unsortedCards.map(formatCardLabel).join(', '));
     }
     return lines.join('\n');
   }
@@ -804,9 +811,9 @@
         name:g.name.trim() || '(unnamed group)',
         priority:!!g.priority,
         notes:g.notes||'',
-        cards: g.cardIds.map(id=>({id, label: cardLabel(id)}))
+        cards: g.cardIds.map(id=>({id, label: cardLabel(id), custom: isCustomCard(id)}))
       })),
-      unsortedCards: unsorted.map(id=>({id, label: cardLabel(id)}))
+      unsortedCards: unsorted.map(id=>({id, label: cardLabel(id), custom: isCustomCard(id)}))
     };
 
     // Always keep a local backup file, regardless of whether email sending works.
@@ -823,8 +830,11 @@
           experience: sc.experience || '',
           compare_frequency: sc.compareFreq || '',
           compare_points: (sc.comparePoints||[]).join(', '),
-          groups_summary: formatGroupsSummary(session)
+         // groups_summary: formatGroupsSummary(session)
         //  session_json: JSON.stringify(session)
+          groups_summary: formatGroupsSummary(session),
+          custom_cards_added: customCardsAdded(session).join(', ') || '(none)'
+        };
         };
         if(CC_EMAIL) payload._cc = CC_EMAIL;
         const res = await fetch(FORMSPREE_ENDPOINT, {
@@ -1032,13 +1042,13 @@
       body.appendChild(meta);
       s.groups.forEach(g=>{
         const gDiv = document.createElement('div'); gDiv.className='g';
-        const cardLabels = g.cards.map(c=>c.label).join(', ') || '(empty)';
+       const cardLabels = g.cards.map(formatCardLabel).join(', ') || '(empty)';
         gDiv.innerHTML = '<b>'+(g.priority?'★ ':'')+(g.name||'(unnamed group)')+'</b>: '+cardLabels + (g.notes?'<br><em>Note: '+g.notes+'</em>':'');
         body.appendChild(gDiv);
       });
       if(s.unsortedCards && s.unsortedCards.length){
         const uDiv = document.createElement('div'); uDiv.className='g';
-        uDiv.innerHTML = '<b>Left unsorted</b>: ' + s.unsortedCards.map(c=>c.label).join(', ');
+        uDiv.innerHTML = '<b>Left unsorted</b>: ' + s.unsortedCards.map(formatCardLabel).join(', ');
         body.appendChild(uDiv);
       }
       det.appendChild(body); wrap.appendChild(det);
@@ -1066,12 +1076,12 @@
       const sc = s.screener || {};
       const base = `"${s.timestamp}","${(sc.name||'').replace(/"/g,'""')}","${(sc.role||'').replace(/"/g,'""')}","${sc.experience||''}","${sc.compareFreq||''}","${(sc.comparePoints||[]).join('; ').replace(/"/g,'""')}"`;
       s.groups.forEach(g=>{
-        const cards = g.cards.map(c=>c.label).join('; ').replace(/"/g,'""');
+        const cards = g.cards.map(formatCardLabel).join('; ').replace(/"/g,'""');
         const notes = (g.notes||'').replace(/"/g,'""');
         csv += `${base},"${(g.name||'').replace(/"/g,'""')}",${g.priority?'yes':'no'},"${cards}","${notes}"\n`;
       });
       if(s.unsortedCards && s.unsortedCards.length){
-        const cards = s.unsortedCards.map(c=>c.label).join('; ').replace(/"/g,'""');
+const cards = s.unsortedCards.map(formatCardLabel).join('; ').replace(/"/g,'""');
         csv += `${base},"(unsorted)",no,"${cards}",""\n`;
       }
     });
