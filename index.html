@@ -381,11 +381,11 @@
   // ============================================================
 
   const DEFAULT_DECK = [
-    "Portfolio Name","Strategy Type","Investment Objective","Inception Date","Fund Provider","Disclosures / Footnotes",
-    "Number of Holdings","Average Expense Ratio","Trailing 12-Month Yield","Risk/Return Position","Best Year Performance",
-    "Worst Year Performance","Asset Allocation Breakdown","Growth of $100,000","Top 10 Holdings","Returns / Performance History",
-    "Gross vs. Net Returns","Benchmark Comparison","Beta (Market Sensitivity)","Asset Category (per holding)",
-    "Fund Objective (per holding)","Change vs. Current Portfolio","Tax Cost of Switching","Improvement Indicator"
+    "Portfolio Name","Strategy Type","Investment Objective","Inception Date","Number of Holdings",
+    "Average Expense Ratio","Trailing 12-Month Yield","Risk/Return Position","Best Year Performance",
+    "Worst Year Performance","Maximum Drawdown","Years to Double (Rule of 72)","Asset Allocation Breakdown",
+    "Top 10 Holdings","Growth of $100,000","Returns / Performance History","Gross vs. Net Returns",
+    "Benchmark Comparison","Disclosures / Footnotes"
   ].map((label,i)=>({id:'c'+i, label, custom:false}));
 
   const ICONS = {
