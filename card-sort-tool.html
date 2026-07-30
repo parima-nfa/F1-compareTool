@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Card Sort — Portfolio Compare Tool</title>
+<style>
+  :root{
+    --paper:#F2F2F5;
+    --paper-raised:#FFFFFF;
+    --ink:#161A33;
+    --ink-soft:#565B75;
+    --line:#D8D8E6;
+    --teal:#1FBFD4;
+    --teal-dark:#161A4A;
+    --teal-soft:#E1F7FA;
+    --gold:#7C3FE4;
+    --gold-soft:#EFE6FB;
+    --danger:#C24A3D;
+    --danger-soft:#F8E1DD;
+    --shadow-sm:0 2px 6px rgba(20,25,60,.10);
+    --shadow-md:0 6px 18px rgba(20,25,60,.16);
+    --shadow-lg:0 14px 40px rgba(20,25,60,.28);
+    --radius:14px;
+    --serif: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:var(--sans);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;}
+  .app{max-width:1180px;margin:0 auto;padding:20px 16px 60px;}
+
+  header.top{
+    display:flex;align-items:center;justify-content:space-between;
+    background:
+      radial-gradient(circle at 6px 6px, rgba(31,191,212,.28) 1px, transparent 1.6px) 0 0/20px 20px,
+      linear-gradient(120deg,#12173F 0%, #202868 55%, #2B3486 100%);
+    border-radius:var(--radius);padding:18px 22px;margin-bottom:20px;flex-wrap:wrap;gap:10px;
+    box-shadow:var(--shadow-md);
+  }
+  header.top .eyebrow{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);font-weight:700;display:block;margin-bottom:3px;}
+  header.top h1{font-family:var(--serif);font-size:1.45rem;margin:0;color:#fff;}
+  .facilitator-toggle{font-size:.8rem;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.4);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:600;}
+  .facilitator-toggle:hover{background:rgba(255,255,255,.24);}
+
+  nav.tabs{display:flex;gap:6px;margin-bottom:22px;border-bottom:1px solid var(--line);}
+  nav.tabs button{font-family:var(--sans);font-size:.9rem;font-weight:700;color:var(--ink-soft);background:none;border:none;padding:10px 4px;margin-right:18px;cursor:pointer;border-bottom:3px solid transparent;}
+  nav.tabs button.active{color:var(--teal-dark);border-bottom-color:var(--gold);}
+
+  .panel{display:none;}
+  .panel.active{display:block;}
+  .hidden{display:none !important;}
+
+  .config-warning{background:#FDECEA;border:2px solid var(--danger);color:#7A2E24;padding:14px 16px;border-radius:var(--radius);
+    font-size:.88rem;line-height:1.5;margin-bottom:18px;font-weight:600;}
+  .config-warning code{background:#fff;padding:2px 6px;border-radius:4px;font-size:.82rem;}
+  .hint{background:var(--teal-soft);border:1px solid #BCE9EF;color:var(--teal-dark);padding:12px 14px;border-radius:var(--radius);font-size:.9rem;margin-bottom:18px;line-height:1.45;box-shadow:var(--shadow-sm);}
+  .empty{color:var(--ink-soft);font-size:.9rem;font-style:italic;padding:20px 0;}
+
+  input[type=text], input[type=number], textarea{font-family:var(--sans);font-size:.92rem;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--paper-raised);color:var(--ink);}
+  input[type=text]:focus, input[type=number]:focus, textarea:focus{outline:2px solid var(--teal);outline-offset:1px;}
+
+  button.primary, button.secondary, button.ghost{font-family:var(--sans);font-weight:700;font-size:.86rem;border-radius:9px;padding:11px 20px;cursor:pointer;border:1px solid transparent;transition:transform .08s, box-shadow .08s;}
+  button.primary{background:var(--teal);color:#fff;box-shadow:var(--shadow-sm);}
+  button.primary:hover{background:var(--teal-dark);transform:translateY(-1px);box-shadow:var(--shadow-md);}
+  button.primary:disabled{background:#C2C2D6;cursor:not-allowed;box-shadow:none;transform:none;}
+  button.secondary{background:var(--paper-raised);color:var(--teal-dark);border-color:var(--teal);}
+  button.secondary:hover{background:var(--teal-soft);transform:translateY(-1px);}
+  button.ghost{background:none;color:var(--ink-soft);border-color:var(--line);}
+  button.ghost:hover{color:var(--ink);}
+
+  /* ---------- Stage toolbar (back / instructions) ---------- */
+  .stage-toolbar{display:flex;gap:10px;margin-bottom:16px;}
+
+  /* ---------- Screener ---------- */
+  .screener-wrap{max-width:580px;margin:10px auto;background:var(--paper-raised);border-radius:var(--radius);padding:28px 30px;box-shadow:var(--shadow-md);}
+  .screener-wrap h2{font-family:var(--serif);font-size:1.35rem;margin-bottom:6px;color:var(--teal-dark);}
+  .screener-wrap p.sub{color:var(--ink-soft);font-size:.92rem;margin-bottom:24px;}
+  .q-block{margin-bottom:22px;}
+  .q-block label.q-title{display:block;font-weight:700;font-size:.9rem;margin-bottom:10px;}
+  .q-block p.q-sub{font-size:.8rem;color:var(--ink-soft);margin:-6px 0 10px;}
+  .q-title .req{color:var(--danger);margin-left:3px;}
+  .q-block.invalid input[type=text], .q-block.invalid input[type=number]{border-color:var(--danger);box-shadow:0 0 0 2px var(--danger-soft);}
+  .q-block.invalid .chip-group{box-shadow:0 0 0 2px var(--danger-soft);border-radius:20px;padding:4px;margin:-4px;}
+  .screener-error{background:var(--danger-soft);border:1px solid #E7B6AC;color:var(--danger);padding:10px 14px;border-radius:8px;font-size:.85rem;margin-bottom:16px;display:none;}
+  .screener-error.show{display:block;}
+  .chip-group{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip-option{background:var(--paper-raised);border:1.5px solid var(--line);border-radius:20px;padding:8px 15px;font-size:.86rem;cursor:pointer;user-select:none;transition:transform .08s;}
+  .chip-option:hover{border-color:var(--teal);transform:translateY(-1px);}
+  .chip-option.selected{background:var(--teal);border-color:var(--teal-dark);color:#fff;font-weight:700;box-shadow:var(--shadow-sm);}
+  .screener-wrap input[type=text]{width:100%;}
+  .freq-field label{display:block;font-size:.85rem;font-weight:600;color:var(--ink);margin:10px 0 8px;}
+
+  /* ---------- Instructions bubble ---------- */
+  .instr-backdrop{position:fixed;inset:0;background:rgba(15,18,50,.5);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
+  .instr-bubble{background:var(--paper-raised);border-radius:18px;max-width:430px;width:100%;padding:28px 28px 22px;box-shadow:var(--shadow-lg);position:relative;border-top:6px solid var(--gold);}
+  .instr-progress{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);font-weight:700;margin-bottom:10px;}
+  .instr-bubble h3{font-family:var(--serif);font-size:1.25rem;margin:0 0 10px;color:var(--teal-dark);}
+  .instr-bubble p{font-size:.92rem;line-height:1.5;color:var(--ink);margin:0 0 22px;}
+  .instr-dots{display:flex;gap:6px;margin-bottom:18px;}
+  .instr-dots span{width:7px;height:7px;border-radius:50%;background:var(--line);}
+  .instr-dots span.on{background:var(--gold);}
+  .instr-footer{display:flex;justify-content:space-between;align-items:center;}
+  .instr-skip{position:absolute;top:16px;right:18px;font-size:.76rem;color:var(--ink-soft);background:none;border:none;cursor:pointer;text-decoration:underline;}
+
+  /* ---------- Sort stage ---------- */
+  .context-line{font-size:.88rem;color:var(--teal-dark);background:var(--gold-soft);border-left:4px solid var(--gold);padding:10px 14px;border-radius:8px;margin-bottom:18px;}
+  .sort-layout{display:flex;gap:22px;align-items:flex-start;}
+  .pool-col{width:250px;flex-shrink:0;}
+  .pool-col .zone-label, .board-col .zone-label{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);font-weight:700;margin:0 0 10px;}
+  #pool{background:var(--paper-raised);border:1px solid var(--line);border-radius:var(--radius);padding:12px;
+    max-height:440px;overflow-y:scroll;display:flex;flex-direction:column;gap:9px;box-shadow:var(--shadow-sm);
+    scrollbar-width:auto;scrollbar-color:var(--teal) var(--paper);}
+  #pool.droptarget{box-shadow:0 0 0 3px var(--teal) inset;background:var(--teal-soft);}
+  #pool::-webkit-scrollbar{width:14px;}
+  #pool::-webkit-scrollbar-track{background:var(--paper);border-radius:8px;}
+  #pool::-webkit-scrollbar-thumb{background:var(--teal);border-radius:8px;border:3px solid var(--paper);}
+  #pool::-webkit-scrollbar-thumb:hover{background:var(--teal-dark);}
+
+  .add-card-box{margin-top:16px;background:var(--gold-soft);border:2px solid var(--gold);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm);}
+  .add-card-box p{font-size:.88rem;font-weight:700;color:var(--teal-dark);margin:0 0 8px;}
+  .add-card-box .row{display:flex;gap:8px;}
+  .add-card-box input{flex:1;font-size:.86rem;padding:9px 11px;border-color:var(--gold);}
+  .add-card-box button{padding:9px 16px;font-size:.85rem;background:var(--gold);border-color:#5E2BB0;color:#fff;}
+  .add-card-box button:hover{background:#5E2BB0;}
+
+  .submit-footer{margin-top:26px;background:
+      radial-gradient(circle at 6px 6px, rgba(31,191,212,.28) 1px, transparent 1.6px) 0 0/20px 20px,
+      linear-gradient(120deg,#12173F 0%, #202868 55%, #2B3486 100%);
+    border-radius:var(--radius);padding:26px 24px;text-align:center;box-shadow:var(--shadow-lg);}
+  .submit-footer p{color:var(--teal-soft);font-size:.9rem;margin:0 0 14px;font-weight:600;}
+  .submit-footer button{background:var(--gold);color:#fff;border-color:#5E2BB0;font-size:1rem;padding:14px 34px;}
+  .submit-footer button:hover{background:#5E2BB0;}
+
+  .board-col{flex:1;min-width:0;}
+  #board{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;}
+
+  .card-chip{background:var(--paper-raised);border:1.5px solid var(--line);border-radius:9px;padding:10px 13px;font-size:.86rem;cursor:grab;user-select:none;box-shadow:var(--shadow-sm);touch-action:none;transition:box-shadow .1s;}
+  .card-chip:hover{box-shadow:var(--shadow-md);border-color:var(--teal);}
+  .card-chip:active{cursor:grabbing;}
+  .card-chip.selected{background:var(--teal);color:#fff;border-color:var(--teal-dark);box-shadow:var(--shadow-md);}
+  .card-chip.custom{border-left:4px solid var(--gold);}
+  .card-chip.ghost{position:fixed;pointer-events:none;z-index:60;opacity:.94;box-shadow:var(--shadow-lg);}
+
+  .group-box{background:#FCFBF8;border:2.5px dashed #B9E6EC;border-radius:var(--radius);padding:0 15px 15px;min-height:140px;transition:box-shadow .12s, border-color .12s;box-shadow:var(--shadow-sm);}
+  .group-box:hover{box-shadow:var(--shadow-md);}
+  .group-box.droptarget{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-soft) inset, var(--shadow-md);}
+  .perf-strip{height:13px;margin:0 -15px 10px;background-image:radial-gradient(circle at 7px 6px, var(--paper) 3px, transparent 3.5px);background-repeat:repeat-x;background-position:7px 0;background-size:16px 13px;border-bottom:1px dashed #B9E6EC;}
+  .group-head{display:flex;align-items:center;gap:4px;margin-bottom:10px;flex-wrap:wrap;}
+  .group-name-display{font-weight:700;font-size:.97rem;flex:1;min-width:60px;cursor:text;color:var(--teal-dark);}
+  .group-name-display.placeholder{color:var(--ink-soft);font-weight:400;font-style:italic;}
+  .icon-btn{background:none;border:1px solid transparent;cursor:pointer;color:var(--ink-soft);border-radius:8px;
+    display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;flex-shrink:0;transition:background .1s,color .1s,border-color .1s;}
+  .icon-btn svg{width:18px;height:18px;display:block;}
+  .icon-btn:hover{color:var(--teal-dark);background:var(--teal-soft);border-color:#B9E6EC;}
+  .icon-btn.on{color:var(--gold);}
+  .icon-btn.on svg{fill:var(--gold);}
+  .icon-btn.confirm{color:#fff;background:var(--teal);border-color:var(--teal-dark);}
+  .icon-btn.confirm:hover{background:var(--teal-dark);}
+  .icon-btn.cancel{color:#fff;background:var(--danger);border-color:#9B3B30;}
+  .icon-btn.cancel:hover{background:#9B3B30;}
+  .group-name-edit{display:flex;gap:6px;flex:1;min-width:0;align-items:center;}
+  .group-name-edit input{flex:1;min-width:0;font-weight:700;font-size:.9rem;}
+  .group-cards{display:flex;flex-wrap:wrap;gap:8px;min-height:34px;margin-bottom:6px;}
+  .note-toggle{font-size:.78rem;color:var(--teal-dark);background:none;border:none;cursor:pointer;text-decoration:underline;font-weight:600;}
+  .note-area{width:100%;font-size:.82rem;margin-top:6px;resize:vertical;min-height:44px;}
+
+  .new-group-box{background:rgba(255,255,255,.5);border:2.5px dashed var(--line);border-radius:var(--radius);min-height:140px;display:flex;align-items:center;justify-content:center;flex-direction:column;color:var(--ink-soft);font-size:.85rem;text-align:center;padding:14px;}
+  .new-group-box.droptarget{border-color:var(--gold);background:var(--gold-soft);color:var(--gold);box-shadow:var(--shadow-md);}
+  .new-group-box .plus{font-size:1.8rem;line-height:1;margin-bottom:4px;color:var(--line);}
+  .new-group-box.droptarget .plus{color:var(--gold);}
+
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;}
+
+  .thankyou{text-align:center;padding:60px 20px;background:var(--paper-raised);border-radius:var(--radius);box-shadow:var(--shadow-md);}
+  .thankyou h2{font-family:var(--serif);font-size:1.6rem;margin-bottom:10px;color:var(--teal-dark);}
+  .thankyou p{color:var(--ink-soft);margin-bottom:24px;}
+
+  /* ---------- Manage cards ---------- */
+  .field-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+  .card-list-item{display:flex;justify-content:space-between;align-items:center;padding:10px 13px;border:1px solid var(--line);border-radius:8px;background:var(--paper-raised);margin-bottom:6px;font-size:.9rem;box-shadow:var(--shadow-sm);}
+  .card-list-item button{background:none;border:none;color:var(--danger);cursor:pointer;font-size:.8rem;font-weight:700;}
+  .tag-custom{font-size:.7rem;color:var(--gold);font-weight:700;margin-left:8px;}
+
+  /* ---------- Results ---------- */
+  table.heat{border-collapse:collapse;width:100%;font-size:.72rem;margin-bottom:26px;}
+  table.heat th, table.heat td{border:1px solid var(--line);padding:4px 5px;text-align:center;}
+  table.heat th{background:var(--paper-raised);font-weight:600;color:var(--ink-soft);}
+  table.heat td.rowlabel{text-align:left;font-weight:600;color:var(--ink);white-space:nowrap;background:var(--paper-raised);max-width:180px;overflow:hidden;text-overflow:ellipsis;}
+  .scroll-x{overflow-x:auto;padding-bottom:6px;}
+  .stat-card{background:var(--paper-raised);border:1px solid var(--line);border-left:5px solid var(--teal);border-radius:var(--radius);padding:16px 18px;margin-bottom:16px;box-shadow:var(--shadow-sm);}
+  .stat-card h3{margin:0 0 10px;font-family:var(--serif);font-size:1.05rem;color:var(--teal-dark);}
+  .rank-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);font-size:.88rem;}
+  .rank-row:last-child{border-bottom:none;}
+  .rank-row .n{color:var(--ink-soft);}
+  .session-item{border:1px solid var(--line);border-radius:9px;margin-bottom:8px;background:var(--paper-raised);box-shadow:var(--shadow-sm);}
+  .session-item summary{padding:11px 15px;cursor:pointer;font-size:.88rem;font-weight:700;color:var(--teal-dark);}
+  .session-item .body{padding:0 15px 15px;font-size:.85rem;color:var(--ink-soft);}
+  .session-item .body .g{margin-bottom:8px;}
+  .session-item .body .g b{color:var(--ink);}
+  .session-meta{font-size:.78rem;color:var(--ink-soft);margin-bottom:6px;}
+
+  @media (max-width:720px){
+    .sort-layout{flex-direction:column;}
+    .pool-col{width:100%;}
+    #pool{flex-direction:row;flex-wrap:wrap;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <div>
+      <span class="eyebrow">F1-CMP-01 · Beta Advisor Study</span>
+      <h1>Portfolio Compare — Card Sort</h1>
+    </div>
+    <button class="facilitator-toggle" id="facilitator-toggle">Facilitator tools</button>
+  </header>
+
+  <div class="config-warning hidden" id="config-warning">
+    ⚠️ Email sending isn't configured yet. Sorts still save as a local backup file on submit, but nothing will be emailed. Open this file, find <code>FORMSPREE_ENDPOINT</code> near the top of the &lt;script&gt; section, and paste in your Formspree endpoint. See SETUP_GUIDE.md.
+  </div>
+
+  <nav class="tabs hidden" id="facilitator-nav">
+    <button data-tab="cards">Manage Cards</button>
+    <button data-tab="results">Results</button>
+    <button data-tab="participant">← Back to sort</button>
+  </nav>
+
+  <!-- PARTICIPANT FLOW -->
+  <section id="panel-participant" class="panel active">
+
+    <!-- Screener -->
+    <div id="stage-screener" class="screener-wrap">
+      <h2>Before we start</h2>
+      <p class="sub">A few quick questions — this takes under a minute and isn't scored.</p>
+
+      <div class="screener-error" id="screener-error">Please answer the required questions (marked *) before continuing.</div>
+
+      <div class="q-block">
+        <label class="q-title">Your name or ID (optional)</label>
+        <input type="text" id="s-name" placeholder="e.g. Advisor 4" />
+      </div>
+
+      <div class="q-block" id="q-role">
+        <label class="q-title">Your role<span class="req">*</span></label>
+        <input type="text" id="s-role" placeholder="e.g. Advisor, Team Lead" />
+      </div>
+
+      <div class="q-block" id="q-experience">
+        <label class="q-title">Years of experience<span class="req">*</span></label>
+        <div class="chip-group" data-q="experience">
+          <div class="chip-option" data-val="<2 years">Less than 2</div>
+          <div class="chip-option" data-val="2-5 years">2–5 years</div>
+          <div class="chip-option" data-val="5-10 years">5–10 years</div>
+          <div class="chip-option" data-val="10+ years">10+ years</div>
+        </div>
+      </div>
+
+      <div class="q-block" id="q-freq">
+        <label class="q-title">How often do you compare portfolios?<span class="req">*</span></label>
+        <div class="chip-group" data-q="compareFreq">
+          <div class="chip-option" data-val="Frequently">Frequently</div>
+          <div class="chip-option" data-val="Often">Often</div>
+          <div class="chip-option" data-val="Sometimes">Sometimes</div>
+          <div class="chip-option" data-val="Rarely">Rarely</div>
+          <div class="chip-option" data-val="Never">Never</div>
+        </div>
+      </div>
+
+      <div class="q-block" id="q-comparePoints">
+        <label class="q-title">At what point do you typically compare portfolios?<span class="req">*</span></label>
+        <p class="q-sub">Select all that apply.</p>
+        <div class="chip-group" data-q="comparePoints" data-multi="true">
+          <div class="chip-option" data-val="Onboarding a new client">Onboarding a new client</div>
+          <div class="chip-option" data-val="Creating a proposal">Creating a proposal</div>
+          <div class="chip-option" data-val="Reviewing an existing portfolio">Reviewing an existing portfolio</div>
+          <div class="chip-option" data-val="Ad hoc / as needed">Ad hoc / as needed</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="screener-continue">Continue</button>
+      </div>
+    </div>
+
+    <!-- Instructions overlay -->
+    <div id="stage-instructions" class="instr-backdrop hidden">
+      <div class="instr-bubble">
+        <button class="instr-skip" id="instr-skip">Skip instructions</button>
+        <div class="instr-progress" id="instr-progress">Step 1 of 4</div>
+        <h3 id="instr-title"></h3>
+        <p id="instr-body"></p>
+        <div class="instr-dots" id="instr-dots"></div>
+        <div class="instr-footer">
+          <button class="ghost" id="instr-prev">Previous</button>
+          <button class="primary" id="instr-next">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sort activity -->
+    <div id="stage-sort" class="hidden">
+      <div class="stage-toolbar">
+        <button class="ghost" id="sort-back-btn">← Back to screener</button>
+        <button class="ghost" id="sort-instr-btn">View instructions</button>
+      </div>
+      <div class="context-line">
+        These are pieces of information advisors might see when comparing a client's current portfolio against a few alternative options. Group anything that feels like it belongs together — there's no right answer.
+      </div>
+      <div class="sort-layout">
+        <div class="pool-col">
+          <div class="zone-label">Cards</div>
+          <div id="pool"></div>
+          <div class="add-card-box">
+            <p>💡 Don't see something you'd expect? Add your own card.</p>
+            <div class="row">
+              <input type="text" id="new-participant-card" placeholder="e.g. Sector Weighting" />
+              <button id="add-participant-card-btn">Add card</button>
+            </div>
+          </div>
+        </div>
+        <div class="board-col">
+          <div class="zone-label">Your groups</div>
+          <div id="board"></div>
+        </div>
+      </div>
+      <div class="submit-footer">
+        <p>That's everything — ready to submit your sort?</p>
+        <button class="primary" id="submit-btn">Submit sort</button>
+      </div>
+    </div>
+
+    <!-- Thank you -->
+    <div id="stage-thankyou" class="thankyou hidden">
+      <h2>Thanks — sort recorded.</h2>
+      <p id="submit-status" style="font-size:.85rem;"></p>
+      <p>Hand the device back, or start a new session for the next advisor.</p>
+      <button class="primary" id="restart-btn">Start new session</button>
+    </div>
+  </section>
+
+  <!-- CARDS PANEL -->
+  <section id="panel-cards" class="panel">
+    <div class="hint">This is the deck every participant sorts. Cards marked <span class="tag-custom">ADDED BY ADVISOR</span> were typed in mid-session by a participant. Note: since there's no shared server, this list is saved only on <em>this</em> browser — to change what advisors see on other devices, edit <code>DEFAULT_DECK</code> in the file itself before sharing the link.</div>
+    <div class="field-row">
+      <input type="text" id="new-card-input" placeholder="Add a card label…" style="flex:1;min-width:220px;" />
+      <button class="secondary" id="add-card-btn">Add card</button>
+    </div>
+    <div id="card-list"></div>
+    <div class="actions"><button class="ghost" id="reset-deck-btn">Reset to default F1-CMP-01 deck</button></div>
+  </section>
+
+  <!-- RESULTS PANEL -->
+  <section id="panel-results" class="panel">
+    <div class="hint">
+      There's no shared server, so results build from session files you've collected — either the backups that auto-download on submit, or the JSON attached in each email. Import them below any time; they're remembered on this browser.
+    </div>
+    <div class="actions" style="margin-bottom:18px;">
+      <label class="secondary" style="display:inline-flex;align-items:center;cursor:pointer;">
+        Import session files
+        <input type="file" id="import-sessions-input" accept="application/json" multiple style="display:none;">
+      </label>
+      <button class="ghost" id="export-btn">Export summary (.csv)</button>
+      <button class="ghost" id="clear-imported-btn">Clear imported data</button>
+    </div>
+    <div id="results-body"></div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+
+  // ============================================================
+  // CONFIG — paste your Formspree endpoint below (see SETUP_GUIDE.md).
+  // CC_EMAIL is optional — add a second recipient like Cindy.
+  // ============================================================
+  const FORMSPREE_ENDPOINT = "https://formspree.io/f/xwvgjerw";
+  const CC_EMAIL = "";
+  // ============================================================
+
+  const DEFAULT_DECK = [
+    "Portfolio Name","Strategy Type","Investment Objective","Inception Date","Fund Provider","Disclosures / Footnotes",
+    "Number of Holdings","Average Expense Ratio","Trailing 12-Month Yield","Risk/Return Position","Best Year Performance",
+    "Worst Year Performance","Asset Allocation Breakdown","Growth of $100,000","Top 10 Holdings","Returns / Performance History",
+    "Gross vs. Net Returns","Benchmark Comparison","Beta (Market Sensitivity)","Asset Category (per holding)",
+    "Fund Objective (per holding)","Change vs. Current Portfolio","Tax Cost of Switching","Improvement Indicator"
+  ].map((label,i)=>({id:'c'+i, label, custom:false}));
+
+  const ICONS = {
+    edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+    starOutline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+    starFilled: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+    x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+  };
+
+  const INSTR_STEPS = [
+    {title:"What this is", body:"We're exploring how advisors like you naturally think about the information used to compare a client's current portfolio against alternative options. There's no right answer — we want your instinct."},
+    {title:"How it works", body:"Drag cards from the panel on the left into the boxes on the right. Group anything that feels like it belongs together."},
+    {title:"Name your groups", body:"Click a group's name to edit it — use whatever words make sense to you, not ours."},
+    {title:"Flag what matters most", body:"Star any group you'd want to see first when comparing portfolios."},
+    {title:"Missing something?", body:"If a card you'd expect isn't there, add your own from the panel on the left — just type it in and it joins the deck."}
+  ];
+
+  let deck = [];
+  let groups = [];
+  let unsorted = [];
+  let selectedCardId = null;
+  let screenerData = {name:'', role:'', experience:'', compareFreq:'', comparePoints:[]};
+  let instrStep = 0;
+  let reviewMode = false;
+  let sortInitialized = false;
+  let groupSeq = 0;
+  function uid(){ return 'g' + (groupSeq++) + '_' + Math.random().toString(36).slice(2,7); }
+
+  function backendConfigured(){
+    return FORMSPREE_ENDPOINT && FORMSPREE_ENDPOINT.indexOf('PASTE_YOUR') !== 0;
+  }
+
+  // Deck persists locally per-browser (this page has no shared server).
+  // To change what every advisor sees, edit DEFAULT_DECK in this file before
+  // distributing the link — see SETUP_GUIDE.md.
+  function loadDeck(){
+    try{
+      const raw = localStorage.getItem('cardsort_deck');
+      deck = raw ? JSON.parse(raw) : DEFAULT_DECK.slice();
+    }catch(e){ deck = DEFAULT_DECK.slice(); }
+  }
+  function saveDeck(){
+    try{ localStorage.setItem('cardsort_deck', JSON.stringify(deck)); }catch(e){}
+  }
+
+  // Imported session files, kept in memory + cached locally so Results
+  // survives a page reload on the facilitator's own browser.
+  let importedSessions = [];
+  function loadImportedSessions(){
+    try{
+      const raw = localStorage.getItem('cardsort_imported_sessions');
+      importedSessions = raw ? JSON.parse(raw) : [];
+    }catch(e){ importedSessions = []; }
+  }
+  function saveImportedSessions(){
+    try{ localStorage.setItem('cardsort_imported_sessions', JSON.stringify(importedSessions)); }catch(e){}
+  }
+
+  function resetSortState(){
+    unsorted = deck.map(c=>c.id);
+    groups = [];
+    selectedCardId = null;
+  }
+  function cardLabel(id){ const c = deck.find(c=>c.id===id); return c ? c.label : '(removed card)'; }
+  function isCustomCard(id){ const c = deck.find(c=>c.id===id); return c ? !!c.custom : false; }
+
+  // ================= SCREENER =================
+  document.querySelectorAll('.chip-group').forEach(group=>{
+    const isMulti = group.dataset.multi === 'true';
+    group.querySelectorAll('.chip-option').forEach(opt=>{
+      opt.addEventListener('click', ()=>{
+        if(isMulti){
+          opt.classList.toggle('selected');
+          screenerData[group.dataset.q] = Array.from(group.querySelectorAll('.chip-option.selected')).map(o=>o.dataset.val);
+        } else {
+          group.querySelectorAll('.chip-option').forEach(o=>o.classList.remove('selected'));
+          opt.classList.add('selected');
+          screenerData[group.dataset.q] = opt.dataset.val;
+        }
+      });
+    });
+  });
+
+  function clearScreenerInvalid(){
+    ['q-role','q-experience','q-freq','q-comparePoints'].forEach(id=>{
+      document.getElementById(id).classList.remove('invalid');
+    });
+    document.getElementById('screener-error').classList.remove('show');
+  }
+
+  document.getElementById('screener-continue').onclick = ()=>{
+    const roleVal = document.getElementById('s-role').value.trim();
+
+    let missing = [];
+    if(!roleVal) missing.push('q-role');
+    if(!screenerData.experience) missing.push('q-experience');
+    if(!screenerData.compareFreq) missing.push('q-freq');
+    if(!screenerData.comparePoints || screenerData.comparePoints.length===0) missing.push('q-comparePoints');
+
+    clearScreenerInvalid();
+    if(missing.length){
+      missing.forEach(id=>document.getElementById(id).classList.add('invalid'));
+      document.getElementById('screener-error').classList.add('show');
+      document.getElementById(missing[0]).scrollIntoView({behavior:'smooth', block:'center'});
+      return;
+    }
+
+    screenerData.name = document.getElementById('s-name').value.trim();
+    screenerData.role = roleVal;
+    document.getElementById('stage-screener').classList.add('hidden');
+    reviewMode = false;
+    instrStep = 0;
+    renderInstrStep();
+    document.getElementById('stage-instructions').classList.remove('hidden');
+  };
+
+  // ================= INSTRUCTIONS =================
+  function renderInstrStep(){
+    const s = INSTR_STEPS[instrStep];
+    document.getElementById('instr-progress').textContent = `Step ${instrStep+1} of ${INSTR_STEPS.length}`;
+    document.getElementById('instr-title').textContent = s.title;
+    document.getElementById('instr-body').textContent = s.body;
+    const dots = document.getElementById('instr-dots');
+    dots.innerHTML = '';
+    INSTR_STEPS.forEach((_,i)=>{ const d = document.createElement('span'); if(i===instrStep) d.classList.add('on'); dots.appendChild(d); });
+
+    const prevBtn = document.getElementById('instr-prev');
+    if(instrStep===0){
+      prevBtn.textContent = reviewMode ? 'Previous' : '← Back to screener';
+      prevBtn.style.visibility = reviewMode ? 'hidden' : 'visible';
+      prevBtn.disabled = reviewMode;
+    } else {
+      prevBtn.textContent = 'Previous';
+      prevBtn.style.visibility = 'visible';
+      prevBtn.disabled = false;
+    }
+    document.getElementById('instr-next').textContent = (instrStep===INSTR_STEPS.length-1) ? (reviewMode ? 'Resume sorting' : 'Start sorting') : 'Next';
+  }
+  document.getElementById('instr-prev').onclick = ()=>{
+    if(instrStep>0){ instrStep--; renderInstrStep(); }
+    else if(!reviewMode){
+      document.getElementById('stage-instructions').classList.add('hidden');
+      document.getElementById('stage-screener').classList.remove('hidden');
+    }
+  };
+  document.getElementById('instr-next').onclick = ()=>{
+    if(instrStep < INSTR_STEPS.length-1){ instrStep++; renderInstrStep(); }
+    else { closeInstructions(); }
+  };
+  document.getElementById('instr-skip').onclick = ()=>{ closeInstructions(); };
+
+  function closeInstructions(){
+    document.getElementById('stage-instructions').classList.add('hidden');
+    if(!sortInitialized){ resetSortState(); sortInitialized = true; }
+    document.getElementById('stage-sort').classList.remove('hidden');
+    renderSort();
+  }
+  function openInstructionsReview(){
+    reviewMode = true;
+    instrStep = 0;
+    renderInstrStep();
+    document.getElementById('stage-sort').classList.add('hidden');
+    document.getElementById('stage-instructions').classList.remove('hidden');
+  }
+
+  document.getElementById('sort-instr-btn').onclick = openInstructionsReview;
+  document.getElementById('sort-back-btn').onclick = ()=>{
+    document.getElementById('stage-sort').classList.add('hidden');
+    document.getElementById('stage-screener').classList.remove('hidden');
+  };
+
+  // ================= SORT: RENDER =================
+  function makeCardChip(cardId){
+    const chip = document.createElement('div');
+    chip.className = 'card-chip' + (selectedCardId===cardId ? ' selected' : '') + (isCustomCard(cardId) ? ' custom' : '');
+    chip.textContent = cardLabel(cardId);
+    chip.dataset.cardId = cardId;
+    attachDrag(chip, cardId);
+    chip.addEventListener('click', ()=>{
+      if(chip.dataset.wasDrag==='1'){ chip.dataset.wasDrag='0'; return; }
+      selectedCardId = (selectedCardId===cardId) ? null : cardId;
+      renderSort();
+    });
+    return chip;
+  }
+
+  function renderSort(){
+    const pool = document.getElementById('pool');
+    pool.innerHTML = '';
+    if(unsorted.length===0){
+      const e = document.createElement('div'); e.className='empty'; e.textContent='All cards sorted.';
+      pool.appendChild(e);
+    }
+    unsorted.forEach(id=>pool.appendChild(makeCardChip(id)));
+
+    const board = document.getElementById('board');
+    board.innerHTML = '';
+    groups.forEach(g=>{
+      const box = document.createElement('div');
+      box.className = 'group-box';
+      box.dataset.groupId = g.id;
+      box.addEventListener('click', (e)=>{
+        if((e.target===box || e.target.classList.contains('group-cards')) && selectedCardId){
+          moveCard(selectedCardId, g.id);
+        }
+      });
+
+      const strip = document.createElement('div'); strip.className = 'perf-strip';
+      box.appendChild(strip);
+
+      const head = document.createElement('div'); head.className = 'group-head';
+
+      if(g.editingName){
+        const editWrap = document.createElement('div'); editWrap.className = 'group-name-edit';
+        const input = document.createElement('input');
+        input.type = 'text'; input.value = g.name; input.placeholder = 'Name this group…';
+        input.onkeydown = (e)=>{ if(e.key==='Enter') commitName(g, input.value); if(e.key==='Escape') cancelName(g); };
+        const okBtn = document.createElement('button');
+        okBtn.className = 'icon-btn confirm'; okBtn.title='Save name'; okBtn.innerHTML = ICONS.check;
+        okBtn.onclick = ()=>commitName(g, input.value);
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'icon-btn cancel'; cancelBtn.title='Cancel'; cancelBtn.innerHTML = ICONS.x;
+        cancelBtn.onclick = ()=>cancelName(g);
+        editWrap.appendChild(input); editWrap.appendChild(okBtn); editWrap.appendChild(cancelBtn);
+        head.appendChild(editWrap);
+        setTimeout(()=>input.focus(), 0);
+      } else {
+        const nameDisplay = document.createElement('div');
+        nameDisplay.className = 'group-name-display' + (g.name ? '' : ' placeholder');
+        nameDisplay.textContent = g.name || 'Click to name this group…';
+        nameDisplay.onclick = (e)=>{ e.stopPropagation(); g.editingName = true; renderSort(); };
+        head.appendChild(nameDisplay);
+
+        const editBtn = document.createElement('button');
+        editBtn.className = 'icon-btn'; editBtn.title = 'Rename'; editBtn.innerHTML = ICONS.edit;
+        editBtn.onclick = (e)=>{ e.stopPropagation(); g.editingName = true; renderSort(); };
+        head.appendChild(editBtn);
+      }
+
+      const starBtn = document.createElement('button');
+      starBtn.className = 'icon-btn' + (g.priority ? ' on' : '');
+      starBtn.title = 'Mark as a priority group'; starBtn.innerHTML = g.priority ? ICONS.starFilled : ICONS.starOutline;
+      starBtn.onclick = (e)=>{ e.stopPropagation(); g.priority = !g.priority; renderSort(); };
+      head.appendChild(starBtn);
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'icon-btn'; delBtn.title = 'Delete group'; delBtn.innerHTML = ICONS.trash;
+      delBtn.onclick = (e)=>{
+        e.stopPropagation();
+        if(!confirm('Delete this group? Its cards will return to the pool.')) return;
+        unsorted = unsorted.concat(g.cardIds);
+        groups = groups.filter(x=>x.id!==g.id);
+        renderSort();
+      };
+      head.appendChild(delBtn);
+
+      box.appendChild(head);
+
+      const cardsWrap = document.createElement('div'); cardsWrap.className = 'group-cards';
+      if(g.cardIds.length===0){
+        const e = document.createElement('span'); e.className='empty'; e.style.fontSize='.8rem'; e.textContent='Drag a card here.';
+        cardsWrap.appendChild(e);
+      }
+      g.cardIds.forEach(id=>cardsWrap.appendChild(makeCardChip(id)));
+      box.appendChild(cardsWrap);
+
+      if(!g.showNote){
+        const noteToggle = document.createElement('button');
+        noteToggle.className = 'note-toggle'; noteToggle.textContent = g.notes ? 'Edit note' : '+ Add a note';
+        noteToggle.onclick = (e)=>{ e.stopPropagation(); g.showNote = true; renderSort(); };
+        box.appendChild(noteToggle);
+      } else {
+        const notesArea = document.createElement('textarea'); notesArea.className = 'note-area';
+        notesArea.placeholder = 'Why these go together (optional)…'; notesArea.value = g.notes || '';
+        notesArea.onclick = (e)=>e.stopPropagation();
+        notesArea.oninput = (e)=>{ g.notes = e.target.value; };
+        box.appendChild(notesArea);
+      }
+
+      board.appendChild(box);
+    });
+
+    const newBox = document.createElement('div');
+    newBox.className = 'new-group-box'; newBox.dataset.newGroup = '1';
+    newBox.innerHTML = '<div class="plus">+</div><div>Drag a card here to start a new group</div>';
+    newBox.addEventListener('click', ()=>{
+      if(selectedCardId){
+        const g = {id:uid(), name:'', cardIds:[], priority:false, notes:'', editingName:false, showNote:false};
+        unsorted = unsorted.filter(id=>id!==selectedCardId);
+        g.cardIds.push(selectedCardId);
+        groups.push(g);
+        selectedCardId = null;
+        renderSort();
+      }
+    });
+    board.appendChild(newBox);
+  }
+
+  function commitName(g, val){ g.name = val.trim(); g.editingName = false; renderSort(); }
+  function cancelName(g){ g.editingName = false; renderSort(); }
+
+  function moveCard(cardId, targetGroupId){
+    unsorted = unsorted.filter(id=>id!==cardId);
+    groups.forEach(g=>{ g.cardIds = g.cardIds.filter(id=>id!==cardId); });
+    if(targetGroupId===null){ unsorted.push(cardId); }
+    else if(targetGroupId==='NEW'){
+      const g = {id:uid(), name:'', cardIds:[cardId], priority:false, notes:'', editingName:false, showNote:false};
+      groups.push(g);
+    } else {
+      const g = groups.find(x=>x.id===targetGroupId);
+      if(g) g.cardIds.push(cardId); else unsorted.push(cardId);
+    }
+    selectedCardId = null;
+    renderSort();
+  }
+
+  // ================= ADD CUSTOM CARD (participant) =================
+  document.getElementById('add-participant-card-btn').onclick = async ()=>{
+    const input = document.getElementById('new-participant-card');
+    const label = input.value.trim();
+    if(!label) return;
+    const newCard = {id:'custom_'+Date.now()+Math.random().toString(36).slice(2,5), label, custom:true};
+    deck.push(newCard);
+    unsorted.push(newCard.id);
+    input.value = '';
+    await saveDeck();
+    renderSort();
+  };
+  document.getElementById('new-participant-card').addEventListener('keydown', (e)=>{
+    if(e.key==='Enter') document.getElementById('add-participant-card-btn').click();
+  });
+
+  // ================= DRAG (pointer events, mouse + touch) =================
+  function attachDrag(chip, cardId){
+    let startX, startY, dragging=false, ghost=null, lastTarget=null;
+    chip.addEventListener('pointerdown', (e)=>{
+      if(e.button!==undefined && e.button!==0) return;
+      startX = e.clientX; startY = e.clientY; dragging=false;
+      const onMove = (e2)=>{
+        const dx = e2.clientX-startX, dy = e2.clientY-startY;
+        if(!dragging && Math.hypot(dx,dy) > 6){
+          dragging = true;
+          chip.dataset.wasDrag = '1';
+          ghost = chip.cloneNode(true);
+          ghost.classList.add('ghost');
+          ghost.style.width = chip.offsetWidth+'px';
+          document.body.appendChild(ghost);
+          chip.style.opacity = '0.35';
+        }
+        if(dragging){
+          ghost.style.left = (e2.clientX - ghost.offsetWidth/2) + 'px';
+          ghost.style.top = (e2.clientY - 20) + 'px';
+          ghost.style.display='none';
+          const under = document.elementFromPoint(e2.clientX, e2.clientY);
+          ghost.style.display='';
+          const groupEl = under ? under.closest('.group-box') : null;
+          const poolEl = under ? under.closest('#pool') : null;
+          const newEl = under ? under.closest('.new-group-box') : null;
+          if(lastTarget) lastTarget.classList.remove('droptarget');
+          lastTarget = groupEl || poolEl || newEl || null;
+          if(lastTarget) lastTarget.classList.add('droptarget');
+        }
+      };
+      const onUp = ()=>{
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onUp);
+        if(dragging){
+          if(lastTarget) lastTarget.classList.remove('droptarget');
+          if(ghost) ghost.remove();
+          chip.style.opacity = '';
+          if(lastTarget){
+            if(lastTarget.id==='pool') moveCard(cardId, null);
+            else if(lastTarget.dataset.newGroup) moveCard(cardId, 'NEW');
+            else if(lastTarget.dataset.groupId) moveCard(cardId, lastTarget.dataset.groupId);
+          } else { renderSort(); }
+        }
+      };
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp);
+    });
+  }
+
+  // ================= SUBMIT =================
+  function downloadSessionFile(session){
+    const blob = new Blob([JSON.stringify(session, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'card-sort-session-' + Date.now() + '.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function formatGroupsSummary(session){
+    let lines = session.groups.map(g=>{
+      const cardList = g.cards.map(c=>c.label).join(', ') || '(empty)';
+      return (g.priority ? '★ ' : '') + (g.name || '(unnamed group)') + ': ' + cardList + (g.notes ? ' — Note: ' + g.notes : '');
+    });
+    if(session.unsortedCards && session.unsortedCards.length){
+      lines.push('Left unsorted: ' + session.unsortedCards.map(c=>c.label).join(', '));
+    }
+    return lines.join('\n');
+  }
+
+  document.getElementById('submit-btn').onclick = async ()=>{
+    if(groups.length===0){ alert('Sort at least one card into a group before submitting.'); return; }
+
+    // Embed labels alongside IDs so this session reads correctly even when
+    // imported on a different browser/deck later.
+    const session = {
+      screener: {...screenerData},
+      timestamp: new Date().toISOString(),
+      groups: groups.map(g=>({
+        name:g.name.trim() || '(unnamed group)',
+        priority:!!g.priority,
+        notes:g.notes||'',
+        cards: g.cardIds.map(id=>({id, label: cardLabel(id)}))
+      })),
+      unsortedCards: unsorted.map(id=>({id, label: cardLabel(id)}))
+    };
+
+    // Always keep a local backup file, regardless of whether email sending works.
+    downloadSessionFile(session);
+
+    let emailOk = false;
+    if(backendConfigured()){
+      try{
+        const sc = session.screener;
+        const payload = {
+          _subject: 'Card sort submission — ' + (sc.name || 'Unnamed advisor'),
+          advisor_name: sc.name || '(not given)',
+          role: sc.role || '',
+          experience: sc.experience || '',
+          compare_frequency: sc.compareFreq || '',
+          compare_points: (sc.comparePoints||[]).join(', '),
+          groups_summary: formatGroupsSummary(session),
+          session_json: JSON.stringify(session)
+        };
+        if(CC_EMAIL) payload._cc = CC_EMAIL;
+        const res = await fetch(FORMSPREE_ENDPOINT, {
+          method:'POST',
+          headers:{'Content-Type':'application/json', 'Accept':'application/json'},
+          body: JSON.stringify(payload)
+        });
+        emailOk = res.ok;
+      }catch(e){ console.error('email send failed', e); emailOk = false; }
+    }
+
+    document.getElementById('stage-sort').classList.add('hidden');
+    document.getElementById('stage-thankyou').classList.remove('hidden');
+    const statusEl = document.getElementById('submit-status');
+    if(!backendConfigured()){
+      statusEl.textContent = 'A backup file downloaded to this device. Email sending isn\'t configured yet — see SETUP_GUIDE.md.';
+    } else if(emailOk){
+      statusEl.textContent = 'Emailed successfully, and a backup file also downloaded to this device.';
+    } else {
+      statusEl.textContent = 'The email may not have sent — a backup file still downloaded to this device, so nothing is lost.';
+    }
+  };
+
+  document.getElementById('restart-btn').onclick = ()=>{
+    screenerData = {name:'', role:'', experience:'', compareFreq:'', comparePoints:[]};
+    document.getElementById('s-name').value = '';
+    document.getElementById('s-role').value = '';
+    document.querySelectorAll('.chip-option.selected').forEach(o=>o.classList.remove('selected'));
+    clearScreenerInvalid();
+    sortInitialized = false;
+    document.getElementById('submit-status').textContent = '';
+    document.getElementById('stage-thankyou').classList.add('hidden');
+    document.getElementById('stage-screener').classList.remove('hidden');
+  };
+
+  // ================= MANAGE CARDS =================
+  function renderCardList(){
+    const wrap = document.getElementById('card-list');
+    wrap.innerHTML = '';
+    if(deck.length===0){
+      const e = document.createElement('div'); e.className='empty'; e.textContent='No cards yet — add one above.';
+      wrap.appendChild(e); return;
+    }
+    deck.forEach(c=>{
+      const row = document.createElement('div'); row.className='card-list-item';
+      const span = document.createElement('span');
+      span.textContent = c.label;
+      if(c.custom){ const tag=document.createElement('span'); tag.className='tag-custom'; tag.textContent='ADDED BY ADVISOR'; span.appendChild(tag); }
+      const del = document.createElement('button'); del.textContent='Remove';
+      del.onclick = async ()=>{ deck = deck.filter(x=>x.id!==c.id); await saveDeck(); renderCardList(); };
+      row.appendChild(span); row.appendChild(del);
+      wrap.appendChild(row);
+    });
+  }
+  document.getElementById('add-card-btn').onclick = async ()=>{
+    const input = document.getElementById('new-card-input');
+    const label = input.value.trim();
+    if(!label) return;
+    deck.push({id:'c'+Date.now()+Math.random().toString(36).slice(2,5), label, custom:false});
+    input.value='';
+    await saveDeck(); renderCardList();
+  };
+  document.getElementById('new-card-input').addEventListener('keydown', (e)=>{ if(e.key==='Enter') document.getElementById('add-card-btn').click(); });
+  document.getElementById('reset-deck-btn').onclick = async ()=>{
+    if(!confirm('Reset the deck to the default F1-CMP-01 card set? This does not delete past results.')) return;
+    deck = DEFAULT_DECK.map(c=>({...c}));
+    await saveDeck(); renderCardList();
+  };
+
+  // ================= RESULTS =================
+  function loadAllSessions(){
+    return importedSessions;
+  }
+
+  function computeCoOccurrence(sessions, cardIds){
+    const counts={}, possible={};
+    cardIds.forEach((a,i)=>cardIds.forEach((b,j)=>{ if(j<=i) return; counts[a+'|'+b]=0; possible[a+'|'+b]=0; }));
+    sessions.forEach(s=>{
+      const placement={};
+      s.groups.forEach((g,gi)=>g.cards.forEach(c=>placement[c.id]=gi));
+      (s.unsortedCards||[]).forEach(c=>placement[c.id]='unsorted');
+      cardIds.forEach((a,i)=>cardIds.forEach((b,j)=>{
+        if(j<=i) return;
+        const key=a+'|'+b;
+        if(placement[a]!==undefined && placement[b]!==undefined){
+          possible[key]++;
+          if(placement[a]!=='unsorted' && placement[a]===placement[b]) counts[key]++;
+        }
+      }));
+    });
+    return {counts, possible};
+  }
+  function renderHeatmap(container, sessions){
+    const cardIds = deck.map(c=>c.id);
+    if(cardIds.length===0 || sessions.length===0) return;
+    const {counts, possible} = computeCoOccurrence(sessions, cardIds);
+    const wrap = document.createElement('div'); wrap.className='stat-card';
+    wrap.innerHTML = '<h3>Card agreement (how often two cards were grouped together)</h3><p style="font-size:.78rem;color:var(--ink-soft);margin:-4px 0 12px;">Only covers cards in your current deck — a custom card an advisor added on their own won\'t appear here unless it\'s also in your deck.</p>';
+    const scrollWrap = document.createElement('div'); scrollWrap.className='scroll-x';
+    const table = document.createElement('table'); table.className='heat';
+    const headRow = document.createElement('tr'); headRow.appendChild(document.createElement('th'));
+    deck.forEach(c=>{ const th=document.createElement('th'); th.textContent = c.label.length>14?c.label.slice(0,13)+'…':c.label; th.title=c.label; headRow.appendChild(th); });
+    table.appendChild(headRow);
+    deck.forEach((rowCard,i)=>{
+      const tr = document.createElement('tr');
+      const th = document.createElement('td'); th.className='rowlabel'; th.textContent=rowCard.label; th.title=rowCard.label;
+      tr.appendChild(th);
+      deck.forEach((colCard,j)=>{
+        const td = document.createElement('td');
+        if(i===j){ td.style.background='#EEEDE8'; td.textContent='—'; }
+        else {
+          const a = i<j?rowCard.id:colCard.id, b = i<j?colCard.id:rowCard.id;
+          const key=a+'|'+b, poss=possible[key]||0, tog=counts[key]||0, pct=poss>0?tog/poss:0;
+          td.style.background = pct>0 ? `rgba(31,191,212,${(pct*0.85+0.05).toFixed(2)})` : 'transparent';
+          td.style.color = pct>0.5 ? '#fff' : 'var(--ink)';
+          td.textContent = poss>0 ? Math.round(pct*100)+'%' : '–';
+          td.title = `${tog} of ${poss} sessions grouped these together`;
+        }
+        tr.appendChild(td);
+      });
+      table.appendChild(tr);
+    });
+    scrollWrap.appendChild(table); wrap.appendChild(scrollWrap); container.appendChild(wrap);
+  }
+  function renderLabelFrequency(container, sessions){
+    const freq={};
+    sessions.forEach(s=>s.groups.forEach(g=>{
+      const key=(g.name||'').trim().toLowerCase();
+      if(!key || key==='(unnamed group)') return;
+      freq[key]=(freq[key]||0)+1;
+    }));
+    const entries = Object.entries(freq).sort((a,b)=>b[1]-a[1]);
+    const wrap = document.createElement('div'); wrap.className='stat-card';
+    wrap.innerHTML = '<h3>Group labels advisors used</h3>';
+    if(entries.length===0){ const e=document.createElement('div'); e.className='empty'; e.textContent='No named groups yet.'; wrap.appendChild(e); }
+    else entries.forEach(([label,count])=>{
+      const row=document.createElement('div'); row.className='rank-row';
+      row.innerHTML = `<span>${label}</span><span class="n">${count} sort${count===1?'':'s'}</span>`;
+      wrap.appendChild(row);
+    });
+    container.appendChild(wrap);
+  }
+  function renderPriorityRank(container, sessions){
+    const pc={}, labels={};
+    sessions.forEach(s=>s.groups.forEach(g=>{ if(g.priority) g.cards.forEach(c=>{ pc[c.id]=(pc[c.id]||0)+1; labels[c.id]=c.label; }); }));
+    const entries = Object.entries(pc).sort((a,b)=>b[1]-a[1]);
+    const wrap = document.createElement('div'); wrap.className='stat-card';
+    wrap.innerHTML = '<h3>Cards most often placed in a priority group</h3>';
+    if(entries.length===0){ const e=document.createElement('div'); e.className='empty'; e.textContent='No priority groups marked yet.'; wrap.appendChild(e); }
+    else entries.forEach(([id,count])=>{
+      const row=document.createElement('div'); row.className='rank-row';
+      row.innerHTML = `<span>${labels[id]}</span><span class="n">${count} session${count===1?'':'s'}</span>`;
+      wrap.appendChild(row);
+    });
+    container.appendChild(wrap);
+  }
+  function renderScreenerSummary(container, sessions){
+    const wrap = document.createElement('div'); wrap.className='stat-card';
+    wrap.innerHTML = '<h3>Screener snapshot</h3>';
+    const withData = sessions.filter(s=>s.screener);
+    if(withData.length===0){ const e=document.createElement('div'); e.className='empty'; e.textContent='No screener data yet.'; wrap.appendChild(e); container.appendChild(wrap); return; }
+    const renderTally = (title, counts, order)=>{
+      const sub = document.createElement('div');
+      sub.style.marginBottom = '10px';
+      const h = document.createElement('div');
+      h.style.fontWeight = '700'; h.style.fontSize = '.85rem'; h.style.margin = '10px 0 4px';
+      h.textContent = title;
+      sub.appendChild(h);
+      order.filter(k=>counts[k]).forEach(k=>{
+        const row=document.createElement('div'); row.className='rank-row';
+        row.innerHTML = `<span>${k}</span><span class="n">${counts[k]}</span>`;
+        sub.appendChild(row);
+      });
+      wrap.appendChild(sub);
+    };
+
+    const freqCounts = {};
+    withData.forEach(s=>{ const v = s.screener.compareFreq || 'No answer'; freqCounts[v]=(freqCounts[v]||0)+1; });
+    renderTally('How often they compare portfolios', freqCounts, ['Frequently','Often','Sometimes','Rarely','Never','No answer']);
+
+    const pointCounts = {};
+    withData.forEach(s=>{
+      const pts = s.screener.comparePoints || [];
+      if(pts.length===0) pointCounts['No answer'] = (pointCounts['No answer']||0)+1;
+      pts.forEach(p=>{ pointCounts[p]=(pointCounts[p]||0)+1; });
+    });
+    renderTally('When they compare portfolios', pointCounts, ['Onboarding a new client','Creating a proposal','Reviewing an existing portfolio','Ad hoc / as needed','No answer']);
+
+    container.appendChild(wrap);
+  }
+  function renderSessionList(container, sessions){
+    const wrap = document.createElement('div'); wrap.className='stat-card';
+    wrap.innerHTML = `<h3>Individual sorts (${sessions.length})</h3>`;
+    if(sessions.length===0){ const e=document.createElement('div'); e.className='empty'; e.textContent='No sorts imported yet.'; wrap.appendChild(e); }
+    sessions.sort((a,b)=> new Date(b.timestamp)-new Date(a.timestamp));
+    sessions.forEach(s=>{
+      const det = document.createElement('details'); det.className='session-item';
+      const sc = s.screener || {};
+      const sum = document.createElement('summary');
+      sum.textContent = (sc.name || 'Unnamed advisor') + ' — ' + new Date(s.timestamp).toLocaleString();
+      det.appendChild(sum);
+      const body = document.createElement('div'); body.className='body';
+      const meta = document.createElement('div'); meta.className='session-meta';
+      meta.textContent = [sc.role, sc.experience, sc.compareFreq?`Compares: ${sc.compareFreq}`:'', (sc.comparePoints&&sc.comparePoints.length)?`When: ${sc.comparePoints.join(', ')}`:''].filter(Boolean).join(' · ') || 'No screener info';
+      body.appendChild(meta);
+      s.groups.forEach(g=>{
+        const gDiv = document.createElement('div'); gDiv.className='g';
+        const cardLabels = g.cards.map(c=>c.label).join(', ') || '(empty)';
+        gDiv.innerHTML = '<b>'+(g.priority?'★ ':'')+(g.name||'(unnamed group)')+'</b>: '+cardLabels + (g.notes?'<br><em>Note: '+g.notes+'</em>':'');
+        body.appendChild(gDiv);
+      });
+      if(s.unsortedCards && s.unsortedCards.length){
+        const uDiv = document.createElement('div'); uDiv.className='g';
+        uDiv.innerHTML = '<b>Left unsorted</b>: ' + s.unsortedCards.map(c=>c.label).join(', ');
+        body.appendChild(uDiv);
+      }
+      det.appendChild(body); wrap.appendChild(det);
+    });
+    container.appendChild(wrap);
+  }
+  function renderResults(){
+    const container = document.getElementById('results-body');
+    const sessions = loadAllSessions();
+    container.innerHTML = '';
+    const summary = document.createElement('div'); summary.className='hint';
+    summary.textContent = sessions.length + ' sort' + (sessions.length===1?'':'s') + ' recorded across ' + deck.length + ' cards.';
+    container.appendChild(summary);
+    if(sessions.length===0){ const e=document.createElement('div'); e.className='empty'; e.textContent='No results yet — run some sorts first.'; container.appendChild(e); return; }
+    renderScreenerSummary(container, sessions);
+    renderPriorityRank(container, sessions);
+    renderLabelFrequency(container, sessions);
+    renderHeatmap(container, sessions);
+    renderSessionList(container, sessions);
+  }
+  document.getElementById('export-btn').onclick = ()=>{
+    const sessions = loadAllSessions();
+    let csv = 'timestamp,advisor,role,experience,compare_frequency,compare_points,group_name,priority,cards,notes\n';
+    sessions.forEach(s=>{
+      const sc = s.screener || {};
+      const base = `"${s.timestamp}","${(sc.name||'').replace(/"/g,'""')}","${(sc.role||'').replace(/"/g,'""')}","${sc.experience||''}","${sc.compareFreq||''}","${(sc.comparePoints||[]).join('; ').replace(/"/g,'""')}"`;
+      s.groups.forEach(g=>{
+        const cards = g.cards.map(c=>c.label).join('; ').replace(/"/g,'""');
+        const notes = (g.notes||'').replace(/"/g,'""');
+        csv += `${base},"${(g.name||'').replace(/"/g,'""')}",${g.priority?'yes':'no'},"${cards}","${notes}"\n`;
+      });
+      if(s.unsortedCards && s.unsortedCards.length){
+        const cards = s.unsortedCards.map(c=>c.label).join('; ').replace(/"/g,'""');
+        csv += `${base},"(unsorted)",no,"${cards}",""\n`;
+      }
+    });
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download='card-sort-results.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  };
+
+  document.getElementById('import-sessions-input').addEventListener('change', (e)=>{
+    const files = Array.from(e.target.files || []);
+    if(files.length===0) return;
+    let loaded = 0, failed = 0;
+    let remaining = files.length;
+    files.forEach(file=>{
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        try{
+          const parsed = JSON.parse(reader.result);
+          const already = importedSessions.some(s=>s.timestamp===parsed.timestamp && JSON.stringify(s.screener)===JSON.stringify(parsed.screener));
+          if(!already){ importedSessions.push(parsed); loaded++; }
+        }catch(err){ failed++; }
+        remaining--;
+        if(remaining===0){
+          saveImportedSessions();
+          renderResults();
+          alert(`Imported ${loaded} session${loaded===1?'':'s'}.` + (failed?` ${failed} file${failed===1?'':'s'} couldn't be read.`:''));
+        }
+      };
+      reader.readAsText(file);
+    });
+    e.target.value = '';
+  });
+
+  document.getElementById('clear-imported-btn').onclick = ()=>{
+    if(!confirm('Clear all imported session data on this browser? This does not delete the original files.')) return;
+    importedSessions = [];
+    saveImportedSessions();
+    renderResults();
+  };
+
+  // ================= NAV =================
+  document.getElementById('facilitator-toggle').onclick = ()=>{
+    document.getElementById('facilitator-nav').classList.toggle('hidden');
+  };
+  document.querySelectorAll('nav.tabs button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+      document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+      if(btn.dataset.tab==='cards') renderCardList();
+      if(btn.dataset.tab==='results') renderResults();
+    });
+  });
+
+  // ================= INIT =================
+  (function init(){
+    if(!backendConfigured()){ document.getElementById('config-warning').classList.remove('hidden'); }
+    loadDeck();
+    loadImportedSessions();
+  })();
+
+})();
+</script>
+</body>
+</html>
